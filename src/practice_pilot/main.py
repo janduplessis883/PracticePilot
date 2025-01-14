@@ -1,4 +1,4 @@
-from researchcrew_ai.utils import time_it
+from practice_pilot.utils import time_it
 import time
 
 

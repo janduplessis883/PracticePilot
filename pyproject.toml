@@ -13,10 +13,12 @@ license = { file = "LICENSE" }
 dependencies = [
     "streamlit",
     "black",
-    "streamlit-shadcn-ui",
     "colorama",
     "pandas",
-    "loguru"
+    "loguru",
+    "pinecone-client",
+    "pinecone",
+    "ragatouille"
 ]
 
 [project.optional-dependencies]

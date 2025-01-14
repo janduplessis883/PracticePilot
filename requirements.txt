@@ -1,0 +1,7 @@
+streamlit
+colorama
+pandas
+loguru
+pinecone-client
+pinecone
+ragatouille

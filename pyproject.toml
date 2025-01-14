@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "practice_pilot"
+version = "0.1.0"
+description = "An RAG System for Practice Managers"
+authors = [
+    { name = "Jan du Plessis", email = "drjanduplessis@icloud.com" }
+]
+license = { file = "LICENSE" }
+dependencies = [
+    "streamlit",
+    "black",
+    "streamlit-shadcn-ui",
+    "colorama",
+    "pandas",
+    "loguru"
+]
+
+[project.optional-dependencies]
+dev = [
+    "black",  # Code formatting
+    "pytest",  # Testing framework
+]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+packages = ["practice_pilot"]
+
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+skip-string-normalization = true

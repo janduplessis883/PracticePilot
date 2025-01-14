@@ -16,16 +16,16 @@ clean:
 all: install clean
 
 app:
-	@streamlit run src/practice_pilot/streamlit_app.py
+	@streamlit run src/practicepilot/streamlit_app.py
 
 git_merge:
 	$(MAKE) clean
-	@python src/practice_pilot/automation/git_merge.py
+	@python src/practicepilot/automation/git_merge.py
 	@echo "👍 Git Merge (master) successfull!"
 
 git_push:
 	$(MAKE) clean
-	@python src/practice_pilot/automation/git_push.py
+	@python src/practicepilot/automation/git_push.py
 	@echo "👍 Git Push (branch) successfull!"
 
 test:
@@ -33,4 +33,4 @@ test:
 
 # Specify package name
 lint:
-	@black src/practice_pilot/
+	@black src/practicepilot/

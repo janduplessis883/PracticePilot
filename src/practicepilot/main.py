@@ -1,4 +1,4 @@
-from practice_pilot.utils import time_it
+from practicepilot.utils import time_it
 import time
 
 

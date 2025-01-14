@@ -5,8 +5,8 @@ from colorama import Fore, init
 
 init(autoreset=True)
 
-from practice_pilot.params import LOCAL_GIT_REPO
-from practice_pilot.utils import time_it
+from practicepilot.params import LOCAL_GIT_REPO
+from practicepilot.utils import time_it
 
 repo_path = LOCAL_GIT_REPO
 

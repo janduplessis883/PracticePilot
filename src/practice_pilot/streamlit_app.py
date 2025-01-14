@@ -4,7 +4,7 @@ import streamlit as st
 page_element="""
 <style>
 [data-testid="stAppViewContainer"]{
-  background-image: url("https://cdn.wallpapersafari.com/88/75/cLUQqJ.jpg");
+  background-image: url("https://github.com/janduplessis883/PracticePilot/blob/master/images/bg.png?raw=true");
   background-size: cover;
 }
 </style>

@@ -12,13 +12,12 @@ authors = [
 license = { file = "LICENSE" }
 dependencies = [
     "streamlit",
-    "black",
     "colorama",
     "pandas",
     "loguru",
     "pinecone-client",
     "pinecone",
-    "ragatouille"
+    "ragatouille",
 ]
 
 [project.optional-dependencies]

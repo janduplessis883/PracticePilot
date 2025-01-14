@@ -9,11 +9,11 @@ st.logo(
 )
 
 
-st.sidebar.title('Control Panel')
+st.sidebar.title(':material/settings: System Settings')
 st.image("images/header.png")
 
 # Create tabs
-tabs = st.tabs([":material/robot_2: Chat", ":material/upload: Upload Documents", ":material/school: Manage Knowledge"])
+tabs = st.tabs([":material/robot_2: Chat", ":material/upload: Upload Documents", ":material/school: Manage Knowledge", ":material/privacy_tip: About"])
 
 # Tab: Chat
 with tabs[0]:
@@ -53,3 +53,10 @@ with tabs[1]:
 with tabs[2]:
     st.header("Manage Knowledge")
     st.write("Manage the knowledge store in your vector database.")
+
+
+# Tab: About
+with tabs[3]:
+    st.header(":material/privacy_tip: About")
+    st.write("The tech behind this app.")
+    st.markdown("[RAGatouille](https://github.com/AnswerDotAI/RAGatouille?ref=dailydoseofds.com)")

@@ -5,8 +5,8 @@ from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone, ServerlessSpec
 import uuid
 
-from practicepilot.semantic_chunker import prepare_documents_with_semantic_chunker
-from practicepilot.pinecone_module import upload_documents_to_pinecone
+from semantic_chunker import prepare_documents_with_semantic_chunker
+from pinecone_module import upload_documents_to_pinecone
 
 desc = ''
 

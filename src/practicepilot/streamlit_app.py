@@ -19,27 +19,52 @@ st.logo(
 
 
 st.sidebar.title(':material/settings: System Settings')
-st.image("images/header.png")
+
 
 # Create tabs
 tabs = st.tabs([":material/robot_2: Chat", ":material/upload: Upload Documents", ":material/school: Manage Knowledge", ":material/privacy_tip: About"])
 
 # Tab: Chat
 with tabs[0]:
-    st.header(":material/robot_2: Chat")
-    st.write("This is the Chat tab where users can interact.")
+    st.header(":material/robot_2: Chat with PracticePilot")
+    st.write(":material/robot_2: **Chat** with **PracticePilot** re Primary Care knowledge.")
 
-    # Chat simulation
-    user_input = st.text_input("Enter your message:", "")
-    if st.button("Send"):
-        if user_input:
-            st.write(f"**You:** {user_input}")
-            st.write("**Bot:** This is a simulated response!")
-        else:
-            st.warning("Please enter a message to send.")
+    # Initialize chat history in session state
+    if "messages" not in st.session_state:
+        st.session_state["messages"] = []
+
+    # Create a container for chat messages
+    messages_container = st.container(height=450, border=True)
+
+    # Display chat messages inside the container
+    with messages_container:
+        for message in st.session_state["messages"]:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+
+    # Message input field at the bottom
+    st.markdown("<div style='position: fixed; bottom: 0; width: 100%;'>", unsafe_allow_html=True)
+    user_input = st.chat_input("Enter your message:")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # Process user input and update the chat
+    if user_input:
+        # Display user message
+        st.session_state["messages"].append({"role": "user", "content": user_input})
+        with messages_container:
+            with st.chat_message("user", avatar="images/user.png"):
+                st.markdown(user_input)
+
+        # Simulate bot response
+        bot_response = "This is a simulated response!"
+        st.session_state["messages"].append({"role": "assistant", "content": bot_response})
+        with messages_container:
+            with st.chat_message("assistant", avatar="images/avatar.png"):
+                st.markdown(bot_response)
 
 # Tab: Upload Documents
 with tabs[1]:
+    st.image("images/header.png")
     #pinecone_api_key = st.secrets['PINECONE_API_KEY']
     pc = Pinecone(api_key="pcsk_3yD3bu_R8mZx94Thw4S8kVVnYzYZQmoAsppttSv7EP7nxPuUK5H5vQgQN1TPuadzB5UBrT")
 
@@ -81,7 +106,7 @@ with tabs[1]:
         if uploaded_file is not None:
             # Display the document description input only after a file is uploaded
             desc = st.text_input("Document Description:", placeholder="Enter document description.")
-
+            st.divider()
             # Proceed only if both a file is uploaded and a description is provided
             if desc != "":
                 text_doc = ""
@@ -117,7 +142,7 @@ with tabs[1]:
         if uploaded_file is not None:
             # Display the document description input after a file is uploaded
             desc = st.text_input("Document Description:", placeholder="Enter document description.")
-
+            st.divider()
             # Proceed only if both the file is uploaded and description is provided
             if desc != "":
                 # Read and display the uploaded file
@@ -146,6 +171,7 @@ with tabs[1]:
 
 # Tab: Manage Knowledge
 with tabs[2]:
+    st.image("images/header.png")
     st.header(":material/school: Manage Knowledge")
     st.write("Manage the knowledge store in your vector database.")
 
@@ -163,6 +189,7 @@ with tabs[2]:
 
 # Tab: About
 with tabs[3]:
+    st.image("images/header.png")
     st.header(":material/privacy_tip: About")
     st.write("The tech behind this app.")
     st.markdown("[RAGatouille](https://github.com/AnswerDotAI/RAGatouille?ref=dailydoseofds.com)")

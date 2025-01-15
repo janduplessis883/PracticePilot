@@ -13,3 +13,7 @@ pdfplumber
 langchain-pinecone
 langchain-openai
 langchain-experimental
+gspread
+st-gsheets-connection
+google-auth
+pandas

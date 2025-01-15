@@ -3,7 +3,7 @@ from langchain_experimental.text_splitter import SemanticChunker
 from langchain_openai.embeddings import OpenAIEmbeddings
 
 
-def prepare_documents_with_semantic_chunker(text_doc, doc_desc, file_name, file_size):
+def prepare_documents_with_semantic_chunker(text_doc, doc_desc, file_name, file_size, category, pub_date):
     """
     Splits a document into semantically meaningful chunks using SemanticChunker
     and prepares them as Document objects with metadata for Pinecone.
@@ -24,17 +24,16 @@ def prepare_documents_with_semantic_chunker(text_doc, doc_desc, file_name, file_
     # Split the text into semantic chunks
     docs = text_splitter.create_documents([text_doc])
 
-    # Get the current date
-    today_date = datetime.now().strftime('%Y-%m-%d')
 
     # Attach metadata to each chunk
     documents_with_metadata = [
         {
             "text": doc.page_content,
             "metadata": {
-                "date": today_date,
+                "date": pub_date,
                 "file_name": file_name,
                 "doc_desc": doc_desc,
+                "category": category,
                 "file_size": file_size,
             }
         }

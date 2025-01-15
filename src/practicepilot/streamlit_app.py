@@ -165,7 +165,7 @@ with tabs[1]:
         # Uploading to Pinecone
         with st.spinner("Uploading to Pinecone..."):
             total_documents = len(documents)
-            progress_bar = st.progress(0)
+            progress_bar = st.sidebar.progress(0)
             for i, document in enumerate(documents):
                 doc_id = str(uuid.uuid4())
                 vector_store.add_texts(
@@ -176,7 +176,7 @@ with tabs[1]:
                 progress_bar.progress((i + 1) / total_documents)
 
         # Success message and reset
-        st.success("✅ Document successfully uploaded!")
+        st.sidebar.success("✅ Document successfully uploaded!")
         time.sleep(2)
 
         # Reset form fields

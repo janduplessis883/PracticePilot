@@ -9,7 +9,7 @@ from semantic_chunker import prepare_documents_with_semantic_chunker
 from pinecone_module import upload_documents_to_pinecone
 from query_module import query_vector_database, generate_augmented_response
 
-
+client = OpenAI()
 
 desc = ''
 

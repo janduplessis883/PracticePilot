@@ -3,6 +3,8 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone, ServerlessSpec
 
+client = OpenAI()
+
 def query_vector_database(client, pinecone_api_key, index_name, embed_model, query_text, top_k=5):
     """
     Queries the Pinecone vector database using OpenAI embeddings for a given query text.
@@ -28,9 +30,9 @@ def query_vector_database(client, pinecone_api_key, index_name, embed_model, que
 
     # Generate embedding using OpenAI
     res = client.embeddings.create(
-        model=embed_model,
         input=query_text,
-        encoding_format="float"
+        model=embed_model,
+        encoding_format="float",
     )
     print("OpenAI Query Embedding created")
 
@@ -79,7 +81,7 @@ def generate_augmented_response(client, result, query, model="gpt-4o-mini"):
             {"role": "user", "content": augmented_query}
         ],
         model=model,
-        stream=False
+        temperature=0
     )
 
     return completion.choices[0].message.content

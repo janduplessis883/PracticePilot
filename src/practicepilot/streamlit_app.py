@@ -194,6 +194,7 @@ with tabs[2]:
     st.header(":material/school: Manage Knowledge")
     st.write("Manage the knowledge store in your vector database.")
     data = conn.read(
+
         worksheet="Sheet1",
         ttl="5",
     )

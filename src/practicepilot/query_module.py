@@ -1,9 +1,6 @@
-from openai import OpenAI
 from langchain_openai import OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone, ServerlessSpec
-
-client = OpenAI()
 
 def query_vector_database(client, pinecone_api_key, index_name, embed_model, query_text, top_k=5):
     """
@@ -85,17 +82,3 @@ def generate_augmented_response(client, result, query, model="gpt-4o-mini"):
     )
 
     return completion.choices[0].message.content
-
-
-if __name__ == "__main__":
-    client = OpenAI()
-    # Example usage
-    pinecone_api_key = "pcsk_3yD3bu_R8mZx94Thw4S8kVVnYzYZQmoAsppttSv7EP7nxPuUK5H5vQgQN1TPuadzB5UBrT"
-    index_name = "practicepilot"
-    embed_model = "text-embedding-3-large"
-    query_text = "What can you tell me about carers annual heatlh checks?"
-    top_k = 5
-
-    result = query_vector_database(client, pinecone_api_key, index_name, embed_model, query_text, top_k)
-
-    generate_augmented_response(client, result, query_text)

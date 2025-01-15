@@ -5,14 +5,10 @@ from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone, ServerlessSpec
 import uuid
 
-# Initialize Pinecone client
-#api_key = st.secrets["PINECONE_API_KEY"]
-
-
-# Function to upload documents to Pinecone
+# Function to upload documents to Pinecone with a progress bar
 def upload_documents_to_pinecone(documents, vector_store):
     """
-    Uploads pre-processed chunked documents to a Pinecone vector store.
+    Uploads pre-processed chunked documents to a Pinecone vector store with a progress bar.
 
     Args:
         documents (list): A list of dictionaries with "text" and "metadata".
@@ -26,7 +22,11 @@ def upload_documents_to_pinecone(documents, vector_store):
     Returns:
         None
     """
-    for document in documents:
+    total_documents = len(documents)
+    progress_bar = st.progress(0)  # Initialize progress bar
+    progress_text = st.empty()  # Create an empty text element for updates
+
+    for i, document in enumerate(documents):
         # Generate a unique ID for each chunk
         doc_id = str(uuid.uuid4())
 
@@ -41,8 +41,14 @@ def upload_documents_to_pinecone(documents, vector_store):
             ids=[doc_id]
         )
 
+        # Update progress bar and text
+        progress = (i + 1) / total_documents
+        progress_bar.progress(progress)
+        progress_text.text(f"Uploading document {i + 1} of {total_documents}...")
 
+        # Simulate a slight delay for better UI experience (remove in production)
+        time.sleep(0.1)
 
-    # Upload documents to Pinecone
-
+    # Mark completion
+    progress_text.text("Upload complete!")
     st.success("✅ Documents successfully uploaded to Pinecone.")

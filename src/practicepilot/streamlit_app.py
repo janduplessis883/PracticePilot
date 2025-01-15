@@ -1,213 +1,139 @@
 import streamlit as st
 import pdfplumber
+import time
 from langchain_openai import OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone, ServerlessSpec
-
 from openai import OpenAI
 from semantic_chunker import prepare_documents_with_semantic_chunker
 from pinecone_module import upload_documents_to_pinecone
 from query_module import query_vector_database, generate_augmented_response
+import uuid
 
-client = OpenAI()
-
-desc = ''
-
+# Streamlit settings
 st.set_page_config(page_title="PracticePilot")
-st.logo(
-    "images/logo_side.png",
-    link="https://github.com/janduplessis883/PracticePilot/tree/master",
-    size="large",
-)
+
+st.write("Available secrets:", list(st.secrets.keys()))
+# Set API keys securely
+openai_api_key = st.secrets["OPENAI_API_KEY"]
+pinecone_api_key = st.secrets["PINECONE_API_KEY"]
+
+# Initialize OpenAI client
+client = OpenAI(api_key=openai_api_key)
 
 
 st.sidebar.title(':material/settings: System Settings')
-clear_button =st.sidebar.button("Reload App / Upload another document")
+
+# Reload app button
+clear_button = st.sidebar.button("Reload App / Upload another document")
 if clear_button:
     st.cache_resource.clear()
     st.cache_data.clear()
     st.rerun()
 
-
-# Create tabs
+# Tab layout
 tabs = st.tabs([":material/robot_2: Chat", ":material/upload: Upload Documents", ":material/school: Manage Knowledge", ":material/privacy_tip: About"])
 
 # Tab: Chat
 with tabs[0]:
     st.header(":material/robot_2: Chat with PracticePilot")
 
-    client = OpenAI()
-    pinecone_api_key = "pcsk_3yD3bu_R8mZx94Thw4S8kVVnYzYZQmoAsppttSv7EP7nxPuUK5H5vQgQN1TPuadzB5UBrT"
     index_name = "practicepilot"
-    embed_model = "text-embedding-3-large"
-    top_k = st.sidebar.number_input("**top_k** value:", min_value=5, max_value=10, help="Specify how many vectors are returned from the vector database for each query. Increase the number if you get no reponse from the bot.")
+    embed_model = "text-embedding-ada-002"
+    top_k = st.sidebar.number_input("**top_k** value:", min_value=5, max_value=10, help="Specify how many vectors are returned.")
 
-    # Initialize chat history in session state
     if "messages" not in st.session_state:
         st.session_state["messages"] = []
 
-    # Create a container for chat messages
     messages_container = st.container()
-
-    # Display chat messages inside the container
     with messages_container:
         for message in st.session_state["messages"]:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
 
-    # Message input field at the bottom
     st.markdown("<div style='position: fixed; bottom: 0; width: 100%;'>", unsafe_allow_html=True)
     user_input = st.chat_input("Ask me a question about Primary Care?")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    result = query_vector_database(client, pinecone_api_key, index_name, embed_model, user_input, top_k)
-
-    # Process user input and update the chat
     if user_input:
-        # Display user message
-        st.session_state["messages"].append({"role": "user", "content": user_input})
-        with messages_container:
-            with st.chat_message("user"):
-                st.markdown(user_input)
+        try:
+            result = query_vector_database(client, pinecone_api_key, index_name, embed_model, user_input, top_k)
+            st.session_state["messages"].append({"role": "user", "content": user_input})
+            with messages_container:
+                with st.chat_message("user"):
+                    st.markdown(user_input)
 
-        # Simulate bot response
-        bot_response = generate_augmented_response(client, result, user_input)
-        st.session_state["messages"].append({"role": "assistant", "content": bot_response})
-        with messages_container:
-            with st.chat_message("assistant"):
-                st.markdown(bot_response)
+            bot_response = generate_augmented_response(client, result, user_input)
+            st.session_state["messages"].append({"role": "assistant", "content": bot_response})
+            with messages_container:
+                with st.chat_message("assistant"):
+                    st.markdown(bot_response)
+
+        except Exception as e:
+            st.error(f"An error occurred: {e}")
 
 # Tab: Upload Documents
 with tabs[1]:
-    st.image("images/header.png")
-    #pinecone_api_key = st.secrets['PINECONE_API_KEY']
-    pc = Pinecone(api_key="pcsk_3yD3bu_R8mZx94Thw4S8kVVnYzYZQmoAsppttSv7EP7nxPuUK5H5vQgQN1TPuadzB5UBrT")
+    st.header(":material/upload: Upload Documents", help="Upload new documents to the Vector Database to extend the app's knowledge.")
+    pc = Pinecone(api_key=pinecone_api_key)
 
-    # Create Vector database if it does not exist
-    index_name = "practicepilot"  # Change this if needed
-
-    existing_indexes = [index_info["name"] for index_info in pc.list_indexes()]
-
-    if index_name not in existing_indexes:
+    if index_name not in [index["name"] for index in pc.list_indexes()]:
         pc.create_index(
             name=index_name,
-            dimension=3072,
+            dimension=1536,
             metric="cosine",
             spec=ServerlessSpec(cloud="aws", region="us-east-1"),
         )
-        # Wait until the index is ready
         while not pc.describe_index(index_name).status["ready"]:
             time.sleep(1)
 
     index = pc.Index(index_name)
-
-    # Initialize OpenAI embeddings
-    embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
-
-    # Initialize the vector store
+    embeddings = OpenAIEmbeddings(model=embed_model)
     vector_store = PineconeVectorStore(index=index, embedding=embeddings)
-
-
-    st.header(":material/upload: Upload Documents", help="Upload new documents to the Vector Database to extend the apps knowledge.")
 
     choice = st.radio("Select document type:", options=["PDF", "TXT"], index=0, horizontal=True)
 
-    if choice == "PDF":
+    uploaded_file = st.file_uploader(f"Upload a {choice} file.", type=choice.lower())
+    if uploaded_file is not None:
+        desc = st.text_input("Document Description:", placeholder="Enter document description.")
+        if desc:
+            text_doc = ""
 
-        # File uploader
-        uploaded_file = st.file_uploader("Upload a PDF", type="pdf")
-
-        # Check if a file has been uploaded
-        if uploaded_file is not None:
-            # Display the document description input only after a file is uploaded
-            desc = st.text_input("Document Description:", placeholder="Enter document description.")
-            st.divider()
-            st.sidebar.subheader("Uploading PDF")
-            # Proceed only if both a file is uploaded and a description is provided
-            if desc != "":
-                text_doc = ""
-
-                # Use pdfplumber to extract text
+            if choice == "PDF":
                 with pdfplumber.open(uploaded_file) as pdf:
-                    # Extract text from each page
-                    for i, page in enumerate(pdf.pages):
-                        text = page.extract_text()
-                        text_doc += text
+                    for page in pdf.pages:
+                        text_doc += page.extract_text()
 
-                    with st.sidebar.expander(":material/menu_book: **Extracted Text**"):
-                        st.write(text_doc)
-
-                with st.spinner("Semantic Splitting of doc..."):
-                    with st.sidebar.expander(":material/vertical_split:  **Semantic Chunks**"):
-                        # Prepare the documents with semantic chunking
-                        documents = prepare_documents_with_semantic_chunker(
-                            text_doc, desc, uploaded_file.name, uploaded_file.size
-                        )
-                        st.json(documents)
-
-                with st.spinner("Uploading embeddings to Pinecone..."):
-                    # Upload the documents to Pinecone
-                    upload_documents_to_pinecone(documents, vector_store)
-
-
-
-    elif choice == "TXT":
-
-        uploaded_file = st.file_uploader("Upload a TXT file.", type="txt")
-
-        # Check if a file has been uploaded
-        if uploaded_file is not None:
-            # Display the document description input after a file is uploaded
-            desc = st.text_input("Document Description:", placeholder="Enter document description.")
-            st.divider()
-            st.sidebar.subheader("Uploading TXT")
-            # Proceed only if both the file is uploaded and description is provided
-            if desc != "":
-                # Read and display the uploaded file
+            elif choice == "TXT":
                 text_doc = uploaded_file.read().decode("utf-8")
-                with st.sidebar.expander(":material/menu_book: **Extracted Text**"):
-                    st.text(text_doc)
 
-                with st.spinner("Semantic Splitting of doc..."):
-                    with st.sidebar.expander(":material/vertical_split:  **Semantic Chunks**"):
-                        # Prepare the documents with semantic chunking
-                        documents = prepare_documents_with_semantic_chunker(text_doc, desc, uploaded_file.name, uploaded_file.size)
-                        st.json(documents)
+            with st.sidebar.expander(":material/menu_book: **Extracted Text**"):
+                st.text(text_doc)
 
-                with st.spinner("Uploading embeddings to Pinecone..."):
-                    # Upload the documents to Pinecone
-                    upload_documents_to_pinecone(documents, vector_store)
+            with st.spinner("Processing document..."):
+                documents = prepare_documents_with_semantic_chunker(text_doc, desc, uploaded_file.name, uploaded_file.size)
 
+            with st.spinner("Uploading to Pinecone..."):
+                total_documents = len(documents)
+                progress_bar = st.progress(0)
+                for i, document in enumerate(documents):
+                    doc_id = str(uuid.uuid4())
+                    vector_store.add_texts(
+                        texts=[document["text"]],
+                        metadatas=[document["metadata"]],
+                        ids=[doc_id],
+                    )
+                    progress_bar.progress((i + 1) / total_documents)
 
-
-
-
-
-
-
-
+            st.success("✅ Document successfully uploaded!")
 
 # Tab: Manage Knowledge
 with tabs[2]:
-    st.image("images/header.png")
     st.header(":material/school: Manage Knowledge")
     st.write("Manage the knowledge store in your vector database.")
 
-
-
-
-
-
-
-
-
-
-
-
-
 # Tab: About
 with tabs[3]:
-    st.image("images/header.png")
     st.header(":material/privacy_tip: About")
     st.write("The tech behind this app.")
-    st.markdown("[RAGatouille](https://github.com/AnswerDotAI/RAGatouille?ref=dailydoseofds.com)")
+    st.markdown("[RAGatouille](https://github.com/AnswerDotAI/RAGatouille)")

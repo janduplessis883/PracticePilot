@@ -169,6 +169,7 @@ with tabs[1]:
 
 
 
+
 # Tab: Manage Knowledge
 with tabs[2]:
     st.image("images/header.png")

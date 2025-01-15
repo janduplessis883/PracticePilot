@@ -12,8 +12,8 @@ import uuid
 
 # Streamlit settings
 st.set_page_config(page_title="PracticePilot")
+st.logo("images/title.png", size='large')
 
-st.write("Available secrets:", list(st.secrets.keys()))
 # Set API keys securely
 openai_api_key = st.secrets["OPENAI_API_KEY"]
 pinecone_api_key = st.secrets["PINECONE_API_KEY"]
@@ -74,6 +74,7 @@ with tabs[0]:
 
 # Tab: Upload Documents
 with tabs[1]:
+    st.image("images/header.png")
     st.header(":material/upload: Upload Documents", help="Upload new documents to the Vector Database to extend the app's knowledge.")
     pc = Pinecone(api_key=pinecone_api_key)
 
@@ -129,11 +130,14 @@ with tabs[1]:
 
 # Tab: Manage Knowledge
 with tabs[2]:
+    st.image("images/header.png")
     st.header(":material/school: Manage Knowledge")
     st.write("Manage the knowledge store in your vector database.")
 
 # Tab: About
 with tabs[3]:
+    st.image("images/header.png")
     st.header(":material/privacy_tip: About")
     st.write("The tech behind this app.")
     st.markdown("[RAGatouille](https://github.com/AnswerDotAI/RAGatouille)")
+    st.write("Available secrets:", list(st.secrets.keys()))

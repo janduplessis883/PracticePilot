@@ -5,3 +5,11 @@ loguru
 pinecone-client
 pinecone
 ragatouille
+llama-index
+llama-hub
+pypdf
+llama-index-core
+pdfplumber
+langchain-pinecone
+langchain-openai
+langchain-experimental

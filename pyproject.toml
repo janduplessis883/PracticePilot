@@ -18,6 +18,7 @@ dependencies = [
     "pinecone-client",
     "pinecone",
     "ragatouille",
+    "pdfplumber"
 ]
 
 [project.optional-dependencies]

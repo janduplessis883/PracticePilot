@@ -134,6 +134,7 @@ with tabs[2]:
     st.header(":material/school: Manage Knowledge")
     st.write("Manage the knowledge store in your vector database.")
 
+
 # Tab: About
 with tabs[3]:
     st.image("images/header.png")

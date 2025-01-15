@@ -49,7 +49,7 @@ with tabs[0]:
 
     index_name = "practicepilot"
     embed_model = "text-embedding-ada-002"
-    filter_date = st.sidebar.date_input("Only consider knowledge **after**:", value="2024-06-01", format="YYYY-MM-DD")
+    filter_date = st.sidebar.date_input("Only consider knowledge **after**:", value=date(2024, 6, 1), format="YYYY-MM-DD")
     top_k = st.sidebar.number_input("**top_k** - how many vectors to return:", min_value=5, max_value=10, help="Specify how many vectors are returned.")
 
     if "messages" not in st.session_state:

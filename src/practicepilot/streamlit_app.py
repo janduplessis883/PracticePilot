@@ -130,8 +130,8 @@ with tabs[1]:
         with c2:
             category = st.selectbox(
                 "File Category:",
-                options=["Admin", "Contract", "Evidence", "Policy", "Prescribing", "Research", "Staff", "Targets"],
-                index=["Admin", "Contract", "Evidence", "Policy", "Prescribing", "Research", "Staff", "Targets"].index(st.session_state.category),
+                options=["Admin", "Contract", "Evidence", "Meetings", "Policy", "Prescribing", "Research", "Staff", "Targets"],
+                index=["Admin", "Contract", "Evidence", "Meetings", "Policy", "Prescribing", "Research", "Staff", "Targets"].index(st.session_state.category),
             )
         desc = st.text_input("Document Description:", value=st.session_state.desc)
 

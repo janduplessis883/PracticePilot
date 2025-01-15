@@ -108,7 +108,7 @@ with tabs[1]:
     if "uploaded_file" not in st.session_state:
         st.session_state.uploaded_file = None
     if "doc_date" not in st.session_state:
-        st.session_state.doc_date = date.today().strftime("%Y-%m-%d")
+        st.session_state.doc_date = date.today().strftime("YYYY-MM-DD")
     if "category" not in st.session_state:
         st.session_state.category = "Admin"
     if "desc" not in st.session_state:
@@ -165,7 +165,7 @@ with tabs[1]:
         # Uploading to Pinecone
         with st.spinner("Uploading to Pinecone..."):
             total_documents = len(documents)
-            progress_bar = st.sidebar.progress(0)
+            progress_bar = st.sidebar.progress(0, text="Upload to Vector Database...")
             for i, document in enumerate(documents):
                 doc_id = str(uuid.uuid4())
                 vector_store.add_texts(

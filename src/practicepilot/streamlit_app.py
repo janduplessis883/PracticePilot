@@ -108,7 +108,7 @@ with tabs[1]:
     if "uploaded_file" not in st.session_state:
         st.session_state.uploaded_file = None
     if "doc_date" not in st.session_state:
-        st.session_state.doc_date = date.today().strftime("YYYY-MM-DD")
+        st.session_state.doc_date = date.today().strftime("%Y-%m-%d")
     if "category" not in st.session_state:
         st.session_state.category = "Admin"
     if "desc" not in st.session_state:

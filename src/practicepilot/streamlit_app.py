@@ -3,10 +3,13 @@ import pdfplumber
 from langchain_openai import OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone, ServerlessSpec
-import uuid
 
+from openai import OpenAI
 from semantic_chunker import prepare_documents_with_semantic_chunker
 from pinecone_module import upload_documents_to_pinecone
+from query_module import query_vector_database, generate_augmented_response
+
+
 
 desc = ''
 
@@ -19,6 +22,11 @@ st.logo(
 
 
 st.sidebar.title(':material/settings: System Settings')
+clear_button =st.sidebar.button("Reload App / Upload another document")
+if clear_button:
+    st.cache_resource.clear()
+    st.cache_data.clear()
+    st.rerun()
 
 
 # Create tabs
@@ -27,14 +35,19 @@ tabs = st.tabs([":material/robot_2: Chat", ":material/upload: Upload Documents",
 # Tab: Chat
 with tabs[0]:
     st.header(":material/robot_2: Chat with PracticePilot")
-    st.write(":material/robot_2: **Chat** with **PracticePilot** re Primary Care knowledge.")
+
+    client = OpenAI()
+    pinecone_api_key = "pcsk_3yD3bu_R8mZx94Thw4S8kVVnYzYZQmoAsppttSv7EP7nxPuUK5H5vQgQN1TPuadzB5UBrT"
+    index_name = "practicepilot"
+    embed_model = "text-embedding-3-large"
+    top_k = st.sidebar.number_input("**top_k** value:", min_value=5, max_value=10, help="Specify how many vectors are returned from the vector database for each query. Increase the number if you get no reponse from the bot.")
 
     # Initialize chat history in session state
     if "messages" not in st.session_state:
         st.session_state["messages"] = []
 
     # Create a container for chat messages
-    messages_container = st.container(height=450, border=True)
+    messages_container = st.container()
 
     # Display chat messages inside the container
     with messages_container:
@@ -44,22 +57,24 @@ with tabs[0]:
 
     # Message input field at the bottom
     st.markdown("<div style='position: fixed; bottom: 0; width: 100%;'>", unsafe_allow_html=True)
-    user_input = st.chat_input("Enter your message:")
+    user_input = st.chat_input("Ask me a question about Primary Care?")
     st.markdown("</div>", unsafe_allow_html=True)
+
+    result = query_vector_database(client, pinecone_api_key, index_name, embed_model, user_input, top_k)
 
     # Process user input and update the chat
     if user_input:
         # Display user message
         st.session_state["messages"].append({"role": "user", "content": user_input})
         with messages_container:
-            with st.chat_message("user", avatar="images/user.png"):
+            with st.chat_message("user"):
                 st.markdown(user_input)
 
         # Simulate bot response
-        bot_response = "This is a simulated response!"
+        bot_response = generate_augmented_response(client, result, user_input)
         st.session_state["messages"].append({"role": "assistant", "content": bot_response})
         with messages_container:
-            with st.chat_message("assistant", avatar="images/avatar.png"):
+            with st.chat_message("assistant"):
                 st.markdown(bot_response)
 
 # Tab: Upload Documents
@@ -107,6 +122,7 @@ with tabs[1]:
             # Display the document description input only after a file is uploaded
             desc = st.text_input("Document Description:", placeholder="Enter document description.")
             st.divider()
+            st.sidebar.subheader("Uploading PDF")
             # Proceed only if both a file is uploaded and a description is provided
             if desc != "":
                 text_doc = ""
@@ -118,11 +134,11 @@ with tabs[1]:
                         text = page.extract_text()
                         text_doc += text
 
-                    with st.expander(":material/menu_book: **Extracted Text**"):
+                    with st.sidebar.expander(":material/menu_book: **Extracted Text**"):
                         st.write(text_doc)
 
                 with st.spinner("Semantic Splitting of doc..."):
-                    with st.expander(":material/vertical_split:  **Semantic Chunks**"):
+                    with st.sidebar.expander(":material/vertical_split:  **Semantic Chunks**"):
                         # Prepare the documents with semantic chunking
                         documents = prepare_documents_with_semantic_chunker(
                             text_doc, desc, uploaded_file.name, uploaded_file.size
@@ -134,6 +150,7 @@ with tabs[1]:
                     upload_documents_to_pinecone(documents, vector_store)
 
 
+
     elif choice == "TXT":
 
         uploaded_file = st.file_uploader("Upload a TXT file.", type="txt")
@@ -143,15 +160,16 @@ with tabs[1]:
             # Display the document description input after a file is uploaded
             desc = st.text_input("Document Description:", placeholder="Enter document description.")
             st.divider()
+            st.sidebar.subheader("Uploading TXT")
             # Proceed only if both the file is uploaded and description is provided
             if desc != "":
                 # Read and display the uploaded file
                 text_doc = uploaded_file.read().decode("utf-8")
-                with st.expander(":material/menu_book: **Extracted Text**"):
+                with st.sidebar.expander(":material/menu_book: **Extracted Text**"):
                     st.text(text_doc)
 
                 with st.spinner("Semantic Splitting of doc..."):
-                    with st.expander(":material/vertical_split:  **Semantic Chunks**"):
+                    with st.sidebar.expander(":material/vertical_split:  **Semantic Chunks**"):
                         # Prepare the documents with semantic chunking
                         documents = prepare_documents_with_semantic_chunker(text_doc, desc, uploaded_file.name, uploaded_file.size)
                         st.json(documents)
@@ -159,7 +177,6 @@ with tabs[1]:
                 with st.spinner("Uploading embeddings to Pinecone..."):
                     # Upload the documents to Pinecone
                     upload_documents_to_pinecone(documents, vector_store)
-
 
 
 

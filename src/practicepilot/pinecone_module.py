@@ -45,4 +45,4 @@ def upload_documents_to_pinecone(documents, vector_store):
 
     # Upload documents to Pinecone
 
-    st.write("Documents successfully uploaded to Pinecone.")
+    st.success("✅ Documents successfully uploaded to Pinecone.")

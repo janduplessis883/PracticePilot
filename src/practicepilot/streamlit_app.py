@@ -8,6 +8,9 @@ from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone, ServerlessSpec
 from openai import OpenAI
 from datetime import datetime, date
+import seaborn as sns
+import pandas as pd
+import matplotlib.pyplot as plt
 
 from semantic_chunker import prepare_documents_with_semantic_chunker
 from pinecone_module import upload_documents_to_pinecone
@@ -41,7 +44,7 @@ if clear_button:
 st.sidebar.title(':material/chat: Chat Settings')
 
 # Tab layout
-tabs = st.tabs([":material/robot_2: Chat", ":material/upload: Upload Documents", ":material/school: Manage Knowledge", ":material/privacy_tip: About"])
+tabs = st.tabs([":material/robot_2: Chat", ":material/upload: Upload Documents", ":material/school: Knowledge", ":material/privacy_tip: About"])
 
 # Tab: Chat
 with tabs[0]:
@@ -50,7 +53,7 @@ with tabs[0]:
     index_name = "practicepilot"
     embed_model = "text-embedding-ada-002"
     filter_date = st.sidebar.date_input("Only consider knowledge **after**:", value=date(2024, 6, 1), format="YYYY-MM-DD")
-    top_k = st.sidebar.number_input("**top_k** - how many vectors to return:", min_value=5, max_value=10, help="Specify how many vectors are returned.")
+    top_k = st.sidebar.number_input("**top_k** - # vectors to return:", value=8, min_value=1, max_value=10, help="Specify how many vectors are returned.")
 
     if "messages" not in st.session_state:
         st.session_state["messages"] = []
@@ -198,8 +201,44 @@ with tabs[2]:
         worksheet="Sheet1",
         ttl="5",
     )
-    st.dataframe(data)
+    data['Publish Date'] = pd.to_datetime(data['Publish Date'])
 
+    # Example: Streamlit multiselect for category selection
+    selector = st.multiselect(
+        "Category Selector:",
+        options=["Admin", "Contract", "Evidence", "Meetings", "Policy", "Prescribing", "Research", "Staff", "Targets"],
+        default=["Admin", "Contract", "Evidence", "Meetings", "Policy", "Prescribing", "Research", "Staff", "Targets"],
+        label_visibility='hidden'
+    )
+
+    # Filter the dataframe based on selected categories
+    if "Category" in data.columns:
+        filtered_data = data[data["Category"].isin(selector)]
+    else:
+        st.warning("The 'Category' column is missing in the dataframe.")
+        filtered_data = data
+
+    # Display the filtered dataframe
+    st.dataframe(filtered_data)
+    st.divider()
+
+    fig, ax = plt.subplots(figsize=(12, 4))
+    sns.lineplot(data=data, x="Publish Date", y="File Size", color="#f09235")
+    # Customize the plot
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_visible(False)
+    ax.yaxis.grid(False)
+    ax.xaxis.grid(True, linestyle="--", linewidth=0.5, color="#888888")
+    plt.xlabel("Date")
+    plt.ylabel("File Size")
+    plt.title(
+        "Data Uploaded to Vector DB"
+    )
+    plt.tight_layout()
+
+    # Display the plot in Streamlit
+    st.pyplot(fig)
 
 # Tab: About
 with tabs[3]:

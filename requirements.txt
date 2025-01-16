@@ -17,3 +17,5 @@ gspread
 st-gsheets-connection
 google-auth
 pandas
+seaborn
+matplotlib

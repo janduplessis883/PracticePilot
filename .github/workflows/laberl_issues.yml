@@ -1,0 +1,48 @@
+name: Label issues and create branch
+
+on:
+  issues:
+    types:
+      - reopened
+      - opened
+
+jobs:
+  label_and_branch:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: write
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Step 2: Label the issue
+      - name: Label the issue
+        run: |
+          gh issue edit "$NUMBER" --add-label "$LABELS"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NUMBER: ${{ github.event.issue.number }}
+          LABELS: triage
+
+      # Step 3: Create a branch for the issue
+      - name: Create a branch
+        run: |
+          BRANCH_NAME="issue-$NUMBER"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b $BRANCH_NAME
+          git push origin $BRANCH_NAME
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NUMBER: ${{ github.event.issue.number }}
+
+      # Step 4: Add a comment to the issue with the branch reference
+      - name: Comment on the issue
+        run: |
+          gh issue comment "$NUMBER" --body "A branch has been created for this issue: \`$BRANCH_NAME\`."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NUMBER: ${{ github.event.issue.number }}
+          BRANCH_NAME: "issue-${{ github.event.issue.number }}"

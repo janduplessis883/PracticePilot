@@ -86,9 +86,9 @@ def generate_augmented_response(client, result, query, model="gpt-4o-mini"):
     augmented_query = "\n\n---------\n\n".join(contexts) + "\n\n-----\n\n" + query
 
 
-    with st.expander(":material/polyline: Review **Knowledge Source**/Embeddings"):
+    with st.sidebar.expander(":material/polyline: Review **Knowledge Source**/Embeddings"):
         st.code(augmented_query, wrap_lines=True)
-        st.toast(f":material/share_reviews: Review **Knowledge Source** click the expander below the chat input field. `{file_name}`")
+        st.toast(f":material/share_reviews: Review **Knowledge Source** click the expander in the sidebar.")
 
 
 

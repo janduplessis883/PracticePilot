@@ -32,7 +32,7 @@ st.logo("images/title.png", size='large')
 openai_api_key = st.secrets["OPENAI_API_KEY"]
 pinecone_api_key = st.secrets["PINECONE_API_KEY"]
 index_name = "practicepilot"
-embed_model = "text-embedding-3-small"
+embed_model = "text-embedding-ada-002"
 
 # 🅾️ Set Developer Mode
 if "developer_mode" not in st.session_state:

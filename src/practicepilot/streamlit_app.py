@@ -64,13 +64,12 @@ tabs = st.tabs([":material/robot_2: **Chat with PracticePilot**", ":material/upl
 
 # Tab: Chat
 with tabs[0]:
-    st.header(":primary[:material/robot_2: Chat with PracticePilot]")
-    st.caption("Ask **PracticePilot** Anything! 🤔 Here to help answer your most pressing questions, drawing from its vast database of local medical knowledge. If PracticePilot can't find the answer, it will reply: '😕 **I don't know!**' Help expand local knowledge by uploading your own documents, medical guidelines, or research papers.")
+    st.subheader(":primary[:material/robot_2: Chat with PracticePilot]")
+    st.caption("Ask :material/robot_2: **PracticePilot** anything! I’ve got a stash of local medical know-how ready to share. But hey, if you stump me, I’ll just have to admit it with a cheeky, ‘😕 I dunno, mate!’")
 
     st.sidebar.header(":material/contact_support: Prompt Suggestions:")
     st.sidebar.caption(":material/prompt_suggestion: Give me an overview of the most recent GP Federation Webinar discussion points.")
     st.sidebar.caption(":material/prompt_suggestion: What were the discussion points at the most recent targets meeting?")
-    st.sidebar.caption(":material/prompt_suggestion: What are risk factors for contracting pneumonia?")
     st.sidebar.caption(":material/prompt_suggestion: A housebound patient requires an ECG, how can I arrange this?")
 
     st.sidebar.header(':material/settings: Chat Settings')
@@ -78,19 +77,19 @@ with tabs[0]:
     top_k = st.sidebar.number_input("Number of vectors to return (**top_k**):", value=10, min_value=1, max_value=20, help="Specify how many vectors are returned.")
     st.sidebar.divider()
     st.session_state["developer_mode"] = st.sidebar.toggle("**Developer**Mode :material/code_blocks:", value=st.session_state["developer_mode"])
-    st.sidebar.write(f":primary[:material/database: {index_name}]")
+    st.sidebar.write(f":primary[Vector Database: :material/database: **{index_name}**]")
 
     if "messages" not in st.session_state:
         st.session_state["messages"] = []
 
-    messages_container = st.container()
+    messages_container = st.container(height=500, border=False)
     with messages_container:
         for message in st.session_state["messages"]:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
 
     st.markdown("<div style='position: fixed; bottom: 0; width: 100%;'>", unsafe_allow_html=True)
-    user_input = st.chat_input("Ask us anything about local healthcare!")
+    user_input = st.chat_input("Ask me anything about local healthcare!")
     st.markdown("</div>", unsafe_allow_html=True)
 
     if user_input:

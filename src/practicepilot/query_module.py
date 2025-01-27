@@ -3,6 +3,7 @@ from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone, ServerlessSpec
 import streamlit as st
 from datetime import datetime
+import time
 
 # Tracking with wandb weave
 import weave
@@ -85,33 +86,29 @@ def generate_augmented_response(client, result, query, model="gpt-4o-mini"):
     # Combine the contexts with the query
     augmented_query = "\n\n---------\n\n".join(contexts) + "\n\n-----\n\n" + query
 
-
-    with st.sidebar.expander(":material/polyline: Review **Knowledge Source**/Embeddings"):
+    with st.sidebar.expander(":material/polyline: Knowledge **Source**"):
         st.code(augmented_query, wrap_lines=True)
-        st.toast(f":material/share_reviews: Review **Knowledge Source** click the expander in the sidebar.")
-
-
+        st.toast(f":material/share_reviews: See sidebar for **Knowledge Source**.")
 
     # System message to prime the model
     primer = f"""### Task:
-Respond to the user query using the provided context. For your reference today's date is {formatted_date}. Use this date for reference when you are asked questions referencing date.
+        Respond to the user query using the provided context. For your reference today's date is {formatted_date}. Use this date for reference when you are asked questions referencing date.
 
-### Guidelines:
-- If you don't know the answer, clearly state: '😗 I don't know! Could you re-phrase your question?'
-- If uncertain, or open-ended question is asked, ask the user for clarification.
-- Respond in the same language as the user's query.
-- If the context is unreadable or of poor quality, inform the user and provide the best possible answer.
-- If the answer isn't present in the context but you possess the knowledge, explain this to the user and provide the answer using your own understanding.
-- Do not use XML tags in your response.
-- Ensure citations are concise and directly related to the information provided.
+        ### Guidelines:
+        - If you don't know the answer, clearly state: '😕 I dunno, mate!'
+        - If uncertain, or open-ended question is asked, ask the user for clarification.
+        - Respond in the same language as the user's query.
+        - If the context is unreadable or of poor quality, inform the user and provide the best possible answer.
+        - If the answer isn't present in the context but you possess the knowledge, explain this to the user and provide the answer using your own understanding.
+        - Do not use XML tags in your response.
+        - Ensure citations are concise and directly related to the information provided.
 
-### Example of Citation:
-If the user asks about a specific topic and the information is found in "whitepaper.pdf", the response should include the citation at the end of your response, like so:
-* "\n📄 `<file_name> - <publish_date>`."
+        ### Example of Citation:
+        If the user asks about a specific topic and the information is found in "whitepaper.pdf", the response should include the citation at the end of your response, like so:
+        * "\n📄 `<file_name> - <publish_date>`."
 
-### Output:
-Provide a clear and direct response to the user's query, from the context provided."""
-    print("Final chat completion to OpenAI.")
+        ### Output:
+        Provide a clear and direct response to the user's query, from the context provided. Use markdown in your response."""
 
     # Generate the chat completion
     completion = client.chat.completions.create(

@@ -36,7 +36,7 @@ embed_model = "text-embedding-ada-002"
 
 # 🅾️ Set Developer Mode
 if "developer_mode" not in st.session_state:
-    st.session_state["developer_mode"] = True
+    st.session_state["developer_mode"] = False
 
 
 # Check if the OpenAI client is already initialized
@@ -159,8 +159,8 @@ with tabs[1]:
         with c2:
             category = st.selectbox(
                 "**File Category**:",
-                options=["Admin", "Contract", "Evidence", "Meetings", "Policy", "Prescribing", "Research", "Staff", "Targets"],
-                index=["Admin", "Contract", "Evidence", "Meetings", "Policy", "Prescribing", "Research", "Staff", "Targets"].index(st.session_state.category),
+                options=["Admin", "Contract", "Evidence", "Meetings", "News",  "Policy", "Prescribing", "Research", "Staff", "Targets"],
+                index=["Admin", "Contract", "Evidence", "Meetings", "News",  "Policy", "Prescribing", "Research", "Staff", "Targets"].index(st.session_state.category),
             )
 
         desc = st.text_input("Brief **Document Description**:", value=st.session_state.desc)
@@ -274,7 +274,7 @@ with tabs[2]:
     weekly_data.reset_index(inplace=True)
 
     # Create the plot
-    fig, ax = plt.subplots(figsize=(12, 5))
+    fig, ax = plt.subplots(figsize=(12, 3))
     sns.lineplot(x="Publish Date", y="File Size", data=weekly_data, color="#53b3c5", linewidth=2)
 
     # Customize the plot
@@ -291,23 +291,38 @@ with tabs[2]:
     # Display the plot in Streamlit
     st.pyplot(fig)
 
-    # Example: Streamlit multiselect for category selection
-    selector = st.multiselect(
-        "Filter knowledge **by Category**:",
-        options=["Admin", "Contract", "Evidence", "Meetings", "Policy", "Prescribing", "Research", "Staff", "Targets"],
-        default=["Admin", "Contract", "Evidence", "Meetings", "Policy", "Prescribing", "Research", "Staff", "Targets"],
-    )
+# Example: Streamlit multiselect for category selection
+selector = st.multiselect(
+    "Filter knowledge **by Category**:",
+    options=["Admin", "Contract", "Evidence", "Meetings", "News", "Policy", "Prescribing", "Research", "Staff", "Targets"],
+    default=["Admin", "Contract", "Evidence", "Meetings", "News", "Policy", "Prescribing", "Research", "Staff", "Targets"],
+)
 
-    st.container(height=15, border=False)
-    # Filter the dataframe based on selected categories
-    if "Category" in data.columns:
-        filtered_data = data[data["Category"].isin(selector)]
+st.container(height=15, border=False)
+
+# Filter the dataframe based on selected categories
+if "Category" in data.columns:
+    filtered_data = data[data["Category"].isin(selector)]
+else:
+    st.warning("The 'Category' column is missing in the dataframe.")
+    filtered_data = data
+
+# Add a text input to search in 'Filename' or 'File Description'
+search_text = st.text_input("Search in 'Filename' or 'File Description':", "")
+
+# Filter the existing filtered_data based on the search term
+if search_text:
+    # Make sure 'Filename' and 'File Description' exist in your DataFrame
+    if "Filename" in filtered_data.columns and "File Description" in filtered_data.columns:
+        filtered_data = filtered_data[
+            filtered_data["Filename"].str.contains(search_text, case=False, na=False)
+            | filtered_data["File Description"].str.contains(search_text, case=False, na=False)
+        ]
     else:
-        st.warning("The 'Category' column is missing in the dataframe.")
-        filtered_data = data
+        st.warning("The 'Filename' or 'File Description' column is missing in the dataframe.")
 
-    # Display the filtered dataframe
-    st.dataframe(filtered_data, height=800)
+# Display the filtered dataframe
+st.dataframe(filtered_data)
 
 
 

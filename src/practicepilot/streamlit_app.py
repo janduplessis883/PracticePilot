@@ -255,7 +255,7 @@ with tabs[1]:
 with tabs[2]:
     st.image("images/header.png")
     st.header(":material/school: Knowledge")
-    st.caption("**Practice Pilot** aggregates knowledge from a range of authoritative sources, including clinical decision support content, medical literature, government reports, practice management resources, and patient education materials, meeting notes, with new updates and additions made continuously since launch.")
+    st.caption("**PracticePilot** aggregates knowledge from a range of authoritative sources, including clinical decision support content, medical literature, government reports, practice management resources, and patient education materials, meeting notes, with new updates and additions made continuously since launch.")
     data = conn.read(
 
         worksheet="Sheet1",
@@ -274,7 +274,7 @@ with tabs[2]:
     weekly_data.reset_index(inplace=True)
 
     # Create the plot
-    fig, ax = plt.subplots(figsize=(12, 3))
+    fig, ax = plt.subplots(figsize=(12, 2))
     sns.lineplot(x="Publish Date", y="File Size", data=weekly_data, color="#eb6849", linewidth=3)
 
     # Customize the plot
@@ -285,7 +285,8 @@ with tabs[2]:
     ax.xaxis.grid(True, linestyle="--", linewidth=0.5, color="#888888")
     plt.xlabel("Date")
     plt.ylabel("File Size (sum)")
-    plt.title("Data Uploaded to Vector DB")
+    plt.ylim(0, 8000000)
+    plt.title("Weekly Data Upload to Vector Database")
     plt.tight_layout()
 
     # Display the plot in Streamlit
@@ -339,9 +340,9 @@ RAG stands for Retrieval-Augmented Generation, a powerful approach that combines
     st.markdown("""
 ### How do Embeddings work in Cosine Search?
 In traditional search systems, the similarity between documents is often measured using metrics like TF-IDF (Term Frequency-Inverse Document Frequency). However, these methods have limitations when dealing with high-dimensional vector spaces. That's where embeddings come in. By representing each document as a dense vector, we can leverage advanced machine learning algorithms to learn meaningful patterns and relationships within the data. In cosine search, which is used by PracticePilot, embeddings play a crucial role in determining similarity between documents. The cosine similarity metric measures the angle between two vectors in a high-dimensional space, providing a more nuanced understanding of semantic relationships.
-### The Power of RAG and Embeddings in Practice Pilot
+### The Power of RAG and Embeddings in PracticePilot
 By integrating Retrieval-Augmented Generation with our Pinecone Vector database, we're able to provide an unparalleled search experience for healthcare professionals. Our system can generate contextualized answers, recall relevant information from large databases, and even detect biases in medical literature. The combination of the retrieval-augmented generation approach and cosine search enables us to deliver accurate, informative results that go beyond traditional search engines. This is made possible by the power of embeddings, which enable our system to capture subtle patterns and relationships within the data, ultimately enhancing the user experience for healthcare professionals.
-### Chatting with Practice Pilot: Tips for Success
+### Chatting with PracticePilot: Tips for Success
 When chatting with a RAG (Retrieval-Augmented Generation) system, keep in mind the following tips to get the most out of your conversation:
 - Be specific and clear about what you're looking for
 - Use simple language and avoid jargon or technical terms unless necessary

@@ -274,7 +274,7 @@ with tabs[2]:
     weekly_data.reset_index(inplace=True)
 
     # Create the plot
-    fig, ax = plt.subplots(figsize=(12, 2))
+    fig, ax = plt.subplots(figsize=(12, 3))
     sns.lineplot(x="Publish Date", y="File Size", data=weekly_data, color="#eb6849", linewidth=3)
 
     # Customize the plot

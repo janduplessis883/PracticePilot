@@ -64,7 +64,7 @@ tabs = st.tabs([":material/robot_2: **Chat with PracticePilot**", ":material/upl
 
 # Tab: Chat
 with tabs[0]:
-    st.subheader(":primary[:material/robot_2: Chat with PracticePilot]")
+    st.image("images/chat.png")
     st.caption("Ask :material/robot_2: **PracticePilot** anything! I’ve got a stash of local medical know-how ready to share. But hey, if you stump me, I’ll just have to admit it with a cheeky, ‘😕 I dunno, mate!’")
 
     st.sidebar.header(":material/contact_support: Prompt Suggestions:")

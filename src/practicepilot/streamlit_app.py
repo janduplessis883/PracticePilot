@@ -275,7 +275,7 @@ with tabs[2]:
 
     # Create the plot
     fig, ax = plt.subplots(figsize=(12, 3))
-    sns.lineplot(x="Publish Date", y="File Size", data=weekly_data, color="#53b3c5", linewidth=3)
+    sns.lineplot(x="Publish Date", y="File Size", data=weekly_data, color="#eb6849", linewidth=3)
 
     # Customize the plot
     ax.spines["top"].set_visible(False)

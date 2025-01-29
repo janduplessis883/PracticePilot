@@ -291,38 +291,38 @@ with tabs[2]:
     # Display the plot in Streamlit
     st.pyplot(fig)
 
-# Example: Streamlit multiselect for category selection
-selector = st.multiselect(
-    "Filter knowledge **by Category**:",
-    options=["Admin", "Contract", "Evidence", "Meetings", "News", "Policy", "Prescribing", "Research", "Staff", "Targets"],
-    default=["Admin", "Contract", "Evidence", "Meetings", "News", "Policy", "Prescribing", "Research", "Staff", "Targets"],
-)
+    # Example: Streamlit multiselect for category selection
+    selector = st.multiselect(
+        "Filter knowledge **by Category**:",
+        options=["Admin", "Contract", "Evidence", "Meetings", "News", "Policy", "Prescribing", "Research", "Staff", "Targets"],
+        default=["Admin", "Contract", "Evidence", "Meetings", "News", "Policy", "Prescribing", "Research", "Staff", "Targets"],
+    )
 
-st.container(height=15, border=False)
+    st.container(height=15, border=False)
 
-# Filter the dataframe based on selected categories
-if "Category" in data.columns:
-    filtered_data = data[data["Category"].isin(selector)]
-else:
-    st.warning("The 'Category' column is missing in the dataframe.")
-    filtered_data = data
-
-# Add a text input to search in 'Filename' or 'File Description'
-search_text = st.text_input("Search in 'Filename' or 'File Description':", "")
-
-# Filter the existing filtered_data based on the search term
-if search_text:
-    # Make sure 'Filename' and 'File Description' exist in your DataFrame
-    if "Filename" in filtered_data.columns and "File Description" in filtered_data.columns:
-        filtered_data = filtered_data[
-            filtered_data["Filename"].str.contains(search_text, case=False, na=False)
-            | filtered_data["File Description"].str.contains(search_text, case=False, na=False)
-        ]
+    # Filter the dataframe based on selected categories
+    if "Category" in data.columns:
+        filtered_data = data[data["Category"].isin(selector)]
     else:
-        st.warning("The 'Filename' or 'File Description' column is missing in the dataframe.")
+        st.warning("The 'Category' column is missing in the dataframe.")
+        filtered_data = data
 
-# Display the filtered dataframe
-st.dataframe(filtered_data)
+    # Add a text input to search in 'Filename' or 'File Description'
+    search_text = st.text_input("Search in 'Filename' or 'File Description':", "")
+
+    # Filter the existing filtered_data based on the search term
+    if search_text:
+        # Make sure 'Filename' and 'File Description' exist in your DataFrame
+        if "Filename" in filtered_data.columns and "File Description" in filtered_data.columns:
+            filtered_data = filtered_data[
+                filtered_data["Filename"].str.contains(search_text, case=False, na=False)
+                | filtered_data["File Description"].str.contains(search_text, case=False, na=False)
+            ]
+        else:
+            st.warning("The 'Filename' or 'File Description' column is missing in the dataframe.")
+
+    # Display the filtered dataframe
+    st.dataframe(filtered_data)
 
 
 

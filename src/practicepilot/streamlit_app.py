@@ -12,6 +12,7 @@ import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
 import time
+import streamlit_shadcn_ui as ui
 
 
 from semantic_chunker import prepare_documents_with_semantic_chunker, clean_text, count_tokens_in_string
@@ -58,12 +59,21 @@ if clear_button:
     st.rerun()
 
 
-
+tabs = ui.tabs(
+            options=[
+                "Chat with PracticePilot",
+                "Upload Documents",
+                "Knowledge",
+                "About",
+            ],
+            default_value="Chat with PracticePilot",
+            key="tab3",
+        )
 # Tab layout
-tabs = st.tabs([":material/robot_2: **Chat with PracticePilot**", ":material/upload: Upload Documents", ":material/school: Knowledge", ":material/privacy_tip: About"])
+# tabs = st.tabs([":material/robot_2: **Chat with PracticePilot**", ":material/upload: Upload Documents", ":material/school: Knowledge", ":material/privacy_tip: About"])
 
 # Tab: Chat
-with tabs[0]:
+if tabs == "Chat with PracticePilot":
     st.image("images/chat.png")
     st.caption("Ask :material/robot_2: **PracticePilot** anything! I’ve got a stash of local medical know-how ready to share. But hey, if you stump me, I’ll just have to admit it with a cheeky, ‘😕 I dunno, mate!’")
 
@@ -75,9 +85,7 @@ with tabs[0]:
     st.sidebar.header(':material/settings: Chat Settings')
     filter_date = st.sidebar.date_input("Only consider **knowledge after**:", value=date(2024, 6, 1), format="YYYY-MM-DD")
     top_k = st.sidebar.number_input("Number of vectors to return (**top_k**):", value=10, min_value=1, max_value=20, help="Specify how many vectors are returned.")
-    st.sidebar.divider()
-    st.session_state["developer_mode"] = st.sidebar.toggle("**Developer**Mode :material/code_blocks:", value=st.session_state["developer_mode"])
-    st.sidebar.write(f":primary[Vector Database: :material/database: **{index_name}**]")
+
 
     if "messages" not in st.session_state:
         st.session_state["messages"] = []
@@ -110,12 +118,14 @@ with tabs[0]:
             st.error(f"An error occurred: {e}")
 
 # Tab: Upload Documents
-with tabs[1]:
+elif tabs == "Upload Documents":
     # Main interface
     st.image("images/header.png")
     st.header(":material/upload: Upload Documents", help="Upload new documents to the Vector Database to extend the app's knowledge.")
     st.caption("**Upload your medical documents**, such as guidelines, papers, or research, in **PDF**, **Markdown**, or **plain Text** formats. Your contributions will be chunked and processed into our Pinecone Vector database, enhancing **PracticePilot's AI-powered knowledge** and improving its ability to provide accurate answers and insights for healthcare professionals. ")
-
+    st.sidebar.divider()
+    st.session_state["developer_mode"] = st.sidebar.toggle("**Developer**Mode :material/code_blocks:", value=st.session_state["developer_mode"])
+    st.sidebar.write(f":primary[Vector Database: :material/database: **{index_name}**]")
     pc = Pinecone(api_key=pinecone_api_key)
 
     # Check if the index exists
@@ -252,7 +262,7 @@ with tabs[1]:
 
 
 # Tab: Manage Knowledge
-with tabs[2]:
+elif tabs == "Knowledge":
     st.image("images/header.png")
     st.header(":material/school: Knowledge")
     st.caption("**PracticePilot** aggregates knowledge from a range of authoritative sources, including clinical decision support content, medical literature, government reports, practice management resources, and patient education materials, meeting notes, with new updates and additions made continuously since launch.")
@@ -328,7 +338,7 @@ with tabs[2]:
 
 
 # Tab: About
-with tabs[3]:
+elif tabs == "About":
     st.image("images/logo3.png")
     st.header(":material/privacy_tip: About")
     st.caption("The tech behind this app, and how to get this most out of your chats.")

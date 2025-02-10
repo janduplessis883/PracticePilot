@@ -10,7 +10,7 @@ primaryColor = "#155e75"
 backgroundColor = "#FFFFFF"
 
 # Secondary background color for your app
-secondaryBackgroundColor = "#f8f9fa"
+secondaryBackgroundColor = "#f3f4f6"
 
 # Text color for your app
 textColor = "#262730"

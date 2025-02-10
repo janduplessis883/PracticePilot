@@ -21,3 +21,4 @@ seaborn
 matplotlib
 weave
 tiktoken
+streamlit-shadcn-ui

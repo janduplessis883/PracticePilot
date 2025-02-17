@@ -3,33 +3,30 @@ from streamlit_gsheets import GSheetsConnection
 import pdfplumber
 import time
 import uuid
-from langchain_openai import OpenAIEmbeddings
-from langchain_pinecone import PineconeVectorStore
-from pinecone import Pinecone, ServerlessSpec
-from openai import OpenAI
+from langchain.embeddings import OpenAIEmbeddings  # updated import path
+from langchain.vectorstores import Pinecone
 from datetime import datetime, date
 import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
-import time
 import streamlit_shadcn_ui as ui
-
+import weave
+import pinecone  # using the current pinecone package
 
 from semantic_chunker import prepare_documents_with_semantic_chunker, clean_text, count_tokens_in_string
 from pinecone_module import upload_documents_to_pinecone
 from query_module import query_vector_database, generate_augmented_response
 from list_docs import add_doc_googlesheet
-import weave
 
-# Check if Weave is already initialized
+# Initialize Weave only once
 if "weave_initialized" not in st.session_state:
-    weave.init('practicepilot')  # Initialize Weave only once
+    weave.init('practicepilot')
     st.session_state["weave_initialized"] = True
 
 st.set_page_config(page_title="PracticePilot")
 st.logo("images/title.png", size='large')
 
-# Set API keys securely & and System variables
+# Set API keys securely & System variables
 openai_api_key = st.secrets["OPENAI_API_KEY"]
 pinecone_api_key = st.secrets["PINECONE_API_KEY"]
 index_name = "practicepilot"
@@ -39,12 +36,10 @@ embed_model = "text-embedding-ada-002"
 if "developer_mode" not in st.session_state:
     st.session_state["developer_mode"] = False
 
-
-# Check if the OpenAI client is already initialized
+# Initialize OpenAI Client
+from openai import OpenAI
 if "openai_client" not in st.session_state:
-    st.session_state["openai_client"] = OpenAI(api_key=openai_api_key)  # Initialize OpenAI client
-
-# Use the client from session state
+    st.session_state["openai_client"] = OpenAI(api_key=openai_api_key)
 client = st.session_state["openai_client"]
 
 gsheets = GSheetsConnection(...)
@@ -56,26 +51,44 @@ if clear_button:
     st.session_state["messages"] = []
     st.cache_resource.clear()
     st.cache_data.clear()
-    st.rerun()
-
+    st.experimental_rerun()
 
 tabs = ui.tabs(
-            options=[
-                "Chat with PracticePilot",
-                "Upload Documents",
-                "Knowledge",
-                "About",
-            ],
-            default_value="Chat with PracticePilot",
-            key="tab3",
-        )
-# Tab layout
-# tabs = st.tabs([":material/robot_2: **Chat with PracticePilot**", ":material/upload: Upload Documents", ":material/school: Knowledge", ":material/privacy_tip: About"])
+    options=[
+        "Chat with PracticePilot",
+        "Upload Documents",
+        "Knowledge",
+        "About",
+    ],
+    default_value="Chat with PracticePilot",
+    key="tab3",
+)
 
-# Tab: Chat
+# ✅ **Initialize Pinecone using the current API**
+pinecone.init(api_key=pinecone_api_key, environment="us-east-1")
+
+if index_name not in pinecone.list_indexes():
+    pinecone.create_index(
+        name=index_name,
+        dimension=1536,  # Adjust based on your embedding model
+        metric="cosine"
+        # If you need serverless specs, check the latest Pinecone docs for configuration details.
+    )
+    # Wait until the index is ready
+    while True:
+        index_description = pinecone.describe_index(index_name)
+        if index_description.status.get("ready", False):
+            break
+        time.sleep(0.5)
+
+index = pinecone.Index(index_name)
+embeddings = OpenAIEmbeddings(model=embed_model)
+vector_store = Pinecone(index, embeddings, text_key="text")
+
+# 🔥 **Chat Tab**
 if tabs == "Chat with PracticePilot":
     st.image("images/chat.png")
-    st.caption("Ask :material/robot_2: **PracticePilot** anything! I’ve got a stash of local medical know-how ready to share. But hey, if you stump me, I’ll just have to admit it with a cheeky, ‘😕 I dunno, mate!’")
+    st.caption("Ask :material/robot_2: **PracticePilot** anything!")
 
     st.sidebar.header(":material/contact_support: Prompt Suggestions:")
     st.sidebar.caption(":material/prompt_suggestion: Give me an overview of the most recent GP Federation Webinar discussion points.")
@@ -83,23 +96,19 @@ if tabs == "Chat with PracticePilot":
     st.sidebar.caption(":material/prompt_suggestion: A housebound patient requires an ECG, how can I arrange this?")
 
     st.sidebar.header(':material/settings: Chat Settings')
-    filter_date = st.sidebar.date_input("Only consider **knowledge after**:", value=date(2024, 6, 1), format="YYYY-MM-DD")
-    top_k = st.sidebar.number_input("Number of vectors to return (**top_k**):", value=10, min_value=1, max_value=20, help="Specify how many vectors are returned.")
-
+    filter_date = st.sidebar.date_input("Only consider **knowledge after**:", value=date(2024, 6, 1))
+    top_k = st.sidebar.number_input("Number of vectors to return (**top_k**):", value=10, min_value=1, max_value=20)
 
     if "messages" not in st.session_state:
         st.session_state["messages"] = []
 
-    messages_container = st.container(height=500, border=False)
+    messages_container = st.container()
     with messages_container:
         for message in st.session_state["messages"]:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
 
-    st.markdown("<div style='position: fixed; bottom: 0; width: 100%;'>", unsafe_allow_html=True)
     user_input = st.chat_input("Ask me anything about local healthcare!")
-    st.markdown("</div>", unsafe_allow_html=True)
-
     if user_input:
         try:
             result = query_vector_database(client, pinecone_api_key, index_name, embed_model, user_input, top_k)
@@ -107,237 +116,86 @@ if tabs == "Chat with PracticePilot":
             with messages_container:
                 with st.chat_message("user"):
                     st.markdown(user_input)
-
             bot_response = generate_augmented_response(client, result, user_input)
             st.session_state["messages"].append({"role": "assistant", "content": bot_response})
             with messages_container:
                 with st.chat_message("assistant"):
                     st.markdown(bot_response)
-
         except Exception as e:
             st.error(f"An error occurred: {e}")
 
-# Tab: Upload Documents
+# 🔥 **Upload Documents Tab**
 elif tabs == "Upload Documents":
-    # Main interface
     st.image("images/header.png")
-    st.header(":material/upload: Upload Documents", help="Upload new documents to the Vector Database to extend the app's knowledge.")
-    st.caption("**Upload your medical documents**, such as guidelines, papers, or research, in **PDF**, **Markdown**, or **plain Text** formats. Your contributions will be chunked and processed into our Pinecone Vector database, enhancing **PracticePilot's AI-powered knowledge** and improving its ability to provide accurate answers and insights for healthcare professionals. ")
-    st.sidebar.divider()
-    st.session_state["developer_mode"] = st.sidebar.toggle("**Developer**Mode :material/code_blocks:", value=st.session_state["developer_mode"])
-    st.sidebar.write(f":primary[Vector Database: :material/database: **{index_name}**]")
-    pc = Pinecone(api_key=pinecone_api_key)
+    st.header(":material/upload: Upload Documents")
 
-    # Check if the index exists
-    if index_name not in [index["name"] for index in pc.list_indexes()]:
-        pc.create_index(
-            name=index_name,
-            dimension=1536,
-            metric="cosine",
-            spec=ServerlessSpec(cloud="aws", region="us-east-1"),
-        )
-        while not pc.describe_index(index_name).status["ready"]:
-            time.sleep(0.5)
+    uploaded_file = st.file_uploader("Select a **file to upload**:", type=["pdf", "txt", "md"])
 
-    index = pc.Index(index_name)
-    embeddings = OpenAIEmbeddings(model=embed_model)
-    vector_store = PineconeVectorStore(index=index, embedding=embeddings)
+    submit_button = st.button(":material/cloud_upload: Upload Document")
 
-    # Default values for form fields
-    if "uploaded_file" not in st.session_state:
-        st.session_state.uploaded_file = None
-    if "doc_date" not in st.session_state:
-        st.session_state.doc_date = date.today().strftime("%Y-%m-%d")
-    if "category" not in st.session_state:
-        st.session_state.category = "Admin"
-    if "desc" not in st.session_state:
-        st.session_state.desc = ""
-
-    # Form for document upload
-    with st.form(key="upload_form", clear_on_submit=True, border=False):
-        # Upload file
-        uploaded_file = st.file_uploader("Select a **file to upload**:", type=["pdf", "txt", "md"])
-
-        # Form fields
-        c1, c2 = st.columns([1, 1])
-        with c1:
-            doc_date = st.date_input(
-                "**Publish Date**:",
-                min_value=date(2024, 6, 1),
-                value=st.session_state.doc_date
-            )
-        with c2:
-            category = st.selectbox(
-                "**File Category**:",
-                options=["Admin", "Contract", "Evidence", "Meetings", "News",  "Policy", "Prescribing", "Research", "Staff", "Targets"],
-                index=["Admin", "Contract", "Evidence", "Meetings", "News",  "Policy", "Prescribing", "Research", "Staff", "Targets"].index(st.session_state.category),
-            )
-
-        desc = st.text_input("Brief **Document Description**:", value=st.session_state.desc)
-
-        # Form buttons
-        submit_button = st.form_submit_button(label=":material/cloud_upload: Upload Document")
-
-
-    if submit_button and uploaded_file is not None and desc:
-        # File processing logic
+    if submit_button and uploaded_file:
         raw_doc = ""
-
         if uploaded_file.type == "application/pdf":
             with pdfplumber.open(uploaded_file) as pdf:
                 for page in pdf.pages:
                     raw_doc += page.extract_text()
-
-        elif uploaded_file.type == "text/plain" or uploaded_file.type == "text/markdown":
+        else:
             raw_doc = uploaded_file.read().decode("utf-8")
 
-
-
-        if st.session_state['developer_mode']:
-            raw_doc = raw_doc
-
-       # Sidebar view of extracted text
         with st.spinner("Text pre-processing..."):
             text_doc = clean_text(raw_doc)
-            time.sleep(1)  # Add delay to ensure spinner is visible
 
-
-        # Display extracted text only in developer mode
-        if st.session_state["developer_mode"]:
-            with st.expander(":material/match_word: Extracted **Text**"):
-                token_count = count_tokens_in_string(text_doc)
-                st.write(f"### 🚥 Token in document: {token_count}")
-                st.text(text_doc)
-
-        # Semantic chunking
         with st.spinner("Semantic Chunking..."):
-            documents = prepare_documents_with_semantic_chunker(
-                text_doc, desc, uploaded_file.name, uploaded_file.size, category, str(doc_date)
-            )
+            documents = prepare_documents_with_semantic_chunker(text_doc, uploaded_file.name, uploaded_file.size)
 
-        # Display chunked text only in developer mode
-        if st.session_state["developer_mode"]:
-            with st.expander(":material/grid_view: Chunked **Text**"):
-                st.json(documents)
+        with st.spinner("Uploading to Pinecone Vector DB..."):
+            for document in documents:
+                doc_id = str(uuid.uuid4())
+                vector_store.add_texts(
+                    texts=[document["text"]],
+                    metadatas=[document["metadata"]],
+                    ids=[doc_id],
+                )
 
-        # Developer Mode: Handle "Upload to Pinecone" button
-        if st.session_state["developer_mode"]:
-            # DO TESTS ON DOCUMENTS - HOW MANY CHUNKS AND IF ANY TEXT > 7000 WORDS TIKTOKEN CHECK
-            if st.button(":material/reset_settings: Reset App"):
-                # Reset form fields and states
-                st.session_state.uploaded_file = None
-                st.session_state.doc_date = date.today().strftime("%Y-%m-%d")
-                st.session_state.category = "Admin"
-                st.session_state.desc = ""
-                st.rerun()
+        st.success("✅ Upload complete!")
+        st.experimental_rerun()
 
-        else:
-
-            # Upload to Pinecone
-            with st.spinner("Uploading to Pinecone Vector DB..."):
-                total_documents = len(documents)
-                progress_bar = st.progress(0, text="Uploading to Pinecone Vector Database...")
-                for i, document in enumerate(documents):
-                    doc_id = str(uuid.uuid4())
-                    vector_store.add_texts(
-                        texts=[document["text"]],
-                        metadatas=[document["metadata"]],
-                        ids=[doc_id],
-                    )
-                    progress_bar.progress((i + 1) / total_documents)
-
-            # Log document in Google Sheet
-            with st.spinner("Log Document in Google Sheet..."):
-                add_doc_googlesheet(uploaded_file.name, desc, uploaded_file.size, category, doc_date)
-                st.success("✅ Upload complete!")
-                time.sleep(5)
-
-            # Reset form fields and states
-            st.session_state.uploaded_file = None
-            st.session_state.doc_date = date.today().strftime("%Y-%m-%d")
-            st.session_state.category = "Admin"
-            st.session_state.desc = ""
-            st.rerun()
-
-
-
-# Tab: Manage Knowledge
+# 🔥 **Knowledge Tab**
 elif tabs == "Knowledge":
     st.image("images/header.png")
     st.header(":material/school: Knowledge")
-    st.caption("**PracticePilot** aggregates knowledge from a range of authoritative sources, including clinical decision support content, medical literature, government reports, practice management resources, and patient education materials, meeting notes, with new updates and additions made continuously since launch.")
-    data = conn.read(
 
-        worksheet="Sheet1",
-        ttl="5",
-    )
+    data = conn.read(worksheet="Sheet1", ttl="5")
     data['Publish Date'] = pd.to_datetime(data['Publish Date'])
-
-
-    # Set 'Publish Date' as the index
     data.set_index('Publish Date', inplace=True)
 
-    # Resample the data weekly and aggregate file size
+    # Weekly aggregation for visualization
     weekly_data = data.resample("D").agg({"File Size": "sum"})
-
-    # Reset the index for plotting
     weekly_data.reset_index(inplace=True)
 
-    # Create the plot
+    # Plot
     fig, ax = plt.subplots(figsize=(12, 3))
     sns.lineplot(x="Publish Date", y="File Size", data=weekly_data, color="#eb6849", linewidth=3)
-
-    # Customize the plot
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-    ax.spines["left"].set_visible(False)
-    ax.yaxis.grid(False)
-    ax.xaxis.grid(True, linestyle="--", linewidth=0.5, color="#888888")
     plt.xlabel("Date")
     plt.ylabel("File Size (sum)")
-    plt.ylim(0, 8000000)
     plt.title("Weekly Data Upload to Vector Database")
     plt.tight_layout()
-
-    # Display the plot in Streamlit
     st.pyplot(fig)
 
-    # Example: Streamlit multiselect for category selection
-    selector = st.multiselect(
-        "Filter knowledge **by Category**:",
-        options=["Admin", "Contract", "Evidence", "Meetings", "News", "Policy", "Prescribing", "Research", "Staff", "Targets"],
-        default=["Admin", "Contract", "Evidence", "Meetings", "News", "Policy", "Prescribing", "Research", "Staff", "Targets"],
-    )
+    # Filter by category
+    selector = st.multiselect("Filter knowledge **by Category**:", options=list(data["Category"].unique()), default=list(data["Category"].unique()))
+    search_text = st.text_input("Search Filename or Description:", "")
 
-    st.container(height=15, border=False)
-
-    # Filter the dataframe based on selected categories
-    if "Category" in data.columns:
-        filtered_data = data[data["Category"].isin(selector)]
-    else:
-        st.warning("The 'Category' column is missing in the dataframe.")
-        filtered_data = data
-
-    # Add a text input to search in 'Filename' or 'File Description'
-    search_text = st.text_input("Search in 'Filename' or 'File Description':", "")
-
-    # Filter the existing filtered_data based on the search term
     if search_text:
-        # Make sure 'Filename' and 'File Description' exist in your DataFrame
-        if "Filename" in filtered_data.columns and "File Description" in filtered_data.columns:
-            filtered_data = filtered_data[
-                filtered_data["Filename"].str.contains(search_text, case=False, na=False)
-                | filtered_data["File Description"].str.contains(search_text, case=False, na=False)
-            ]
-        else:
-            st.warning("The 'Filename' or 'File Description' column is missing in the dataframe.")
+        filtered_data = data[data["Filename"].str.contains(search_text, case=False, na=False)]
+    else:
+        filtered_data = data[data["Category"].isin(selector)]
 
-    # Display the filtered dataframe
     st.dataframe(filtered_data)
 
-
-
-# Tab: About
+# 🔥 **About Tab**
 elif tabs == "About":
     st.image("images/logo3.png")
     st.header(":material/privacy_tip: About")

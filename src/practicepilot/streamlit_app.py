@@ -1,17 +1,20 @@
 import streamlit as st
-from streamlit_gsheets import GSheetsConnection
 import pdfplumber
 import time
 import uuid
-from langchain.embeddings import OpenAIEmbeddings  # updated import path
-from langchain.vectorstores import Pinecone
 from datetime import datetime, date
 import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
 import streamlit_shadcn_ui as ui
 import weave
-import pinecone  # using the current pinecone package
+
+# New Pinecone import for the current API
+from pinecone import Pinecone, ServerlessSpec
+
+# Updated LangChain Community imports
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.vectorstores import Pinecone as LangchainPinecone
 
 from semantic_chunker import prepare_documents_with_semantic_chunker, clean_text, count_tokens_in_string
 from pinecone_module import upload_documents_to_pinecone
@@ -42,6 +45,8 @@ if "openai_client" not in st.session_state:
     st.session_state["openai_client"] = OpenAI(api_key=openai_api_key)
 client = st.session_state["openai_client"]
 
+# Initialize GSheets connection
+from streamlit_gsheets import GSheetsConnection
 gsheets = GSheetsConnection(...)
 conn = st.connection("gsheets", type=GSheetsConnection)
 
@@ -65,25 +70,24 @@ tabs = ui.tabs(
 )
 
 # ✅ **Initialize Pinecone using the current API**
-pinecone.init(api_key=pinecone_api_key, environment="us-east-1")
+pc = Pinecone(api_key=pinecone_api_key, environment="us-east-1")
 
-if index_name not in pinecone.list_indexes():
-    pinecone.create_index(
+# Check if the index exists; create it if needed
+if index_name not in pc.list_indexes().names():
+    pc.create_index(
         name=index_name,
         dimension=1536,  # Adjust based on your embedding model
-        metric="cosine"
-        # If you need serverless specs, check the latest Pinecone docs for configuration details.
+        metric="cosine",
+        spec=ServerlessSpec(cloud="aws", region="us-east-1"),
     )
     # Wait until the index is ready
-    while True:
-        index_description = pinecone.describe_index(index_name)
-        if index_description.status.get("ready", False):
-            break
+    while not pc.describe_index(index_name).status.get("ready", False):
         time.sleep(0.5)
 
-index = pinecone.Index(index_name)
+# Get the index and set up embeddings and vector store
+index = pc.Index(index_name)
 embeddings = OpenAIEmbeddings(model=embed_model)
-vector_store = Pinecone(index, embeddings, text_key="text")
+vector_store = LangchainPinecone(index, embeddings, text_key="text")
 
 # 🔥 **Chat Tab**
 if tabs == "Chat with PracticePilot":
@@ -130,7 +134,6 @@ elif tabs == "Upload Documents":
     st.header(":material/upload: Upload Documents")
 
     uploaded_file = st.file_uploader("Select a **file to upload**:", type=["pdf", "txt", "md"])
-
     submit_button = st.button(":material/cloud_upload: Upload Document")
 
     if submit_button and uploaded_file:
